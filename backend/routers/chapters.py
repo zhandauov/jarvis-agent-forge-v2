@@ -2,12 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.dependencies import get_db
+from core.dependencies import get_current_user, get_db
 from models.chapter import Chapter
 from models.report import Report
 from schemas.chapter import ChapterCreate, ChapterOut, ChapterReorder, ChapterUpdate
 
-router = APIRouter(prefix="/api/reports/{report_id}/chapters", tags=["chapters"])
+router = APIRouter(prefix="/api/reports/{report_id}/chapters", tags=["chapters"], dependencies=[Depends(get_current_user)])
 
 
 async def _get_report_or_404(report_id: int, db: AsyncSession) -> Report:

@@ -2,12 +2,12 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.dependencies import get_db
+from core.dependencies import get_current_user, get_db
 from models.chapter import Chapter
 from models.generation_run import AgentMessage, GenerationRun
 from schemas.generation import AgentMessageOut, GenerationRunOut, GenerationTriggerResponse
 
-router = APIRouter(tags=["generation"])
+router = APIRouter(tags=["generation"], dependencies=[Depends(get_current_user)])
 
 
 @router.post("/api/chapters/{chapter_id}/generate", response_model=GenerationTriggerResponse, status_code=201)

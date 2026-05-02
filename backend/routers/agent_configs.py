@@ -4,12 +4,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.dependencies import get_db
+from core.dependencies import get_current_user, get_db
 from models.agent_config import AgentTeamConfig
 from models.chapter import Chapter
 from schemas.agent_config import AgentConfigOut, AgentConfigUpsert
 
-router = APIRouter(prefix="/api/chapters/{chapter_id}/agent-config", tags=["agent-config"])
+router = APIRouter(prefix="/api/chapters/{chapter_id}/agent-config", tags=["agent-config"], dependencies=[Depends(get_current_user)])
 
 
 async def _get_chapter_or_404(chapter_id: int, db: AsyncSession) -> Chapter:

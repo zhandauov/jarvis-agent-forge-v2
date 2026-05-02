@@ -9,14 +9,14 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
-from core.dependencies import get_db
+from core.dependencies import get_current_user, get_db
 from knowledge_base.extractor import extract_and_chunk
 from knowledge_base.store import KBStore
 from models.knowledge_base import KBDocument
 from models.report import Report
 from schemas.knowledge_base import KBDocumentOut
 
-router = APIRouter(prefix="/api/reports/{report_id}/kb", tags=["knowledge-base"])
+router = APIRouter(prefix="/api/reports/{report_id}/kb", tags=["knowledge-base"], dependencies=[Depends(get_current_user)])
 
 ALLOWED_TYPES = {"pdf": "pdf", "docx": "docx", "doc": "docx"}
 

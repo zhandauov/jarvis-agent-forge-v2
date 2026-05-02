@@ -10,7 +10,8 @@ export function useWebSocket(runId: Ref<number | null>) {
   function connect() {
     if (!runId.value) return
     const proto = location.protocol === 'https:' ? 'wss' : 'ws'
-    ws = new WebSocket(`${proto}://${location.host}/ws/runs/${runId.value}`)
+    const token = localStorage.getItem('auth_token') ?? ''
+    ws = new WebSocket(`${proto}://${location.host}/ws/runs/${runId.value}?token=${token}`)
 
     ws.onmessage = (e) => {
       try {

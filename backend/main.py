@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from core.database import create_tables
 from knowledge_base.store import KBStore
-from routers import reports, chapters, agent_configs, knowledge_base, generation, websocket
+from routers import reports, chapters, agent_configs, knowledge_base, generation, websocket, auth
 
 
 @asynccontextmanager
@@ -25,6 +25,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.router)
 app.include_router(reports.router)
 app.include_router(chapters.router)
 app.include_router(agent_configs.router)
