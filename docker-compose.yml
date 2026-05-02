@@ -1,0 +1,36 @@
+version: "3.9"
+
+networks:
+  app-net:
+    driver: bridge
+
+services:
+  backend:
+    build: ./backend
+    env_file: ./backend/.env
+    volumes:
+      - kb_uploads:/app/uploads
+      - sqlite_data:/app/data
+    networks:
+      - app-net
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    networks:
+      - app-net
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  kb_uploads:
+  sqlite_data:
