@@ -41,6 +41,7 @@
         <AgentConversation
           :messages="genStore.messages"
           :streaming-chunk="genStore.streamingChunk"
+          :agent-streaming="genStore.agentStreaming"
         />
       </div>
 

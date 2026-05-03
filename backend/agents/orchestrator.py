@@ -74,7 +74,7 @@ async def _run_generation_inner(run_id: int) -> None:
             supervisor_prompt = config.supervisor_prompt or SUPERVISOR_SYSTEM_DEFAULT
             worker_base_prompt = config.worker_prompt or WORKER_SYSTEM_DEFAULT
 
-            agent_model = config.model or "claude-opus-4-7"
+            agent_model = config.model or "claude-sonnet-4-6"
             internet_access = bool(config.internet_access)
             supervisor = SupervisorAgent(supervisor_prompt, client, run_id, bus, model=agent_model)
             workers = {
@@ -104,7 +104,7 @@ async def _run_generation_inner(run_id: int) -> None:
                 worker = workers.get(role) or WorkerAgent(role, worker_base_prompt, client, model=agent_model, internet_access=internet_access)
                 sequence += 1
                 await bus.publish(run_id, {"type": "agent_message", "data": {"role": role, "content": f"Working on: {task}", "message_type": "task", "sequence": sequence}})
-                result = await worker.execute_task(task, kb_chunks)
+                result = await worker.execute_task(task, kb_chunks, bus=bus, run_id=run_id)
                 sequence += 1
                 result_content = f"**{role} Report**\n\n{result.findings}" + (("\n\n**Key data points:**\n" + "\n".join(f"- {p}" for p in result.data_points)) if result.data_points else "")
                 msg = AgentMessage(run_id=run_id, sequence=sequence, role=role, content=result_content, message_type="result")
@@ -113,7 +113,9 @@ async def _run_generation_inner(run_id: int) -> None:
                 await bus.publish(run_id, {"type": "agent_message", "data": {"role": role, "content": result_content, "message_type": "result", "sequence": sequence}})
                 return result
 
-            results = await asyncio.gather(*[run_worker(role, task_map.get(role, f"Research {chapter.title}")) for role in worker_roles])
+            results = []
+            for role in worker_roles:
+                results.append(await run_worker(role, task_map.get(role, f"Research {chapter.title}")))
             all_results.extend(results)
 
             _check_cancelled(run_id)
@@ -131,8 +133,8 @@ async def _run_generation_inner(run_id: int) -> None:
                 await db.commit()
                 await bus.publish(run_id, {"type": "agent_message", "data": {"role": "supervisor", "content": follow_up_content, "message_type": "discussion", "sequence": sequence}})
 
-                follow_up_results = await asyncio.gather(*[run_worker(t.worker_role, t.task) for t in decision.follow_up_tasks])
-                all_results.extend(follow_up_results)
+                for t in decision.follow_up_tasks:
+                    all_results.append(await run_worker(t.worker_role, t.task))
                 _check_cancelled(run_id)
 
             # Step 4: Aggregate final output

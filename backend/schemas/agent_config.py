@@ -10,7 +10,7 @@ class AgentConfigUpsert(BaseModel):
     worker_roles: list[str]
     worker_count: int = 3
     max_rounds: int = 4
-    model: str = "claude-opus-4-6"
+    model: str = "claude-sonnet-4-6"
     internet_access: bool = False
 
     @field_validator("worker_roles")

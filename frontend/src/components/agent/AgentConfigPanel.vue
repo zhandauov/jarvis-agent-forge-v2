@@ -5,8 +5,8 @@
     <div class="field">
       <label>Model</label>
       <select v-model="form.model">
-        <option value="claude-opus-4-7">Claude Opus 4.7 (most capable)</option>
         <option value="claude-sonnet-4-6">Claude Sonnet 4.6 (balanced)</option>
+        <option value="claude-opus-4-6">Claude Opus 4.6 (most capable)</option>
         <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (fastest)</option>
       </select>
     </div>
@@ -95,7 +95,7 @@ const form = reactive<AgentConfigUpsert>({
   worker_roles: props.initialConfig?.worker_roles ?? ['Data Analyst', 'Market Researcher', 'Report Writer'],
   worker_count: props.initialConfig?.worker_roles?.length ?? 3,
   max_rounds: props.initialConfig?.max_rounds ?? 4,
-  model: props.initialConfig?.model ?? 'claude-opus-4-7',
+  model: props.initialConfig?.model ?? 'claude-sonnet-4-6',
   internet_access: props.initialConfig?.internet_access ?? false,
 })
 

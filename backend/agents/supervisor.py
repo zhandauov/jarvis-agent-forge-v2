@@ -20,7 +20,7 @@ class SupervisorAgent:
         client: anthropic.AsyncAnthropic,
         run_id: int,
         bus: MessageBus,
-        model: str = "claude-opus-4-7",
+        model: str = "claude-sonnet-4-6",
     ) -> None:
         self.system_prompt = supervisor_prompt
         self.client = client

@@ -8,6 +8,7 @@ export const useGenerationStore = defineStore('generation', () => {
   const messages = ref<AgentMessage[]>([])
   const finalMarkdown = ref<string | null>(null)
   const streamingChunk = ref('')
+  const agentStreaming = ref<Record<string, string>>({})
   const errorMessage = ref<string | null>(null)
 
   function handleWsEvent(event: { type: string; data: Record<string, unknown> }) {
@@ -15,18 +16,26 @@ export const useGenerationStore = defineStore('generation', () => {
       case 'status_update':
         runStatus.value = event.data.status as typeof runStatus.value
         break
-      case 'agent_message':
+      case 'agent_message': {
+        const msgRole = event.data.role as string
+        delete agentStreaming.value[msgRole]
         messages.value.push({
           id: Date.now(),
           run_id: activeRunId.value!,
           sequence: event.data.sequence as number,
-          role: event.data.role as string,
+          role: msgRole,
           content: event.data.content as string,
           message_type: event.data.message_type as string,
           created_at: new Date().toISOString(),
         })
         streamingChunk.value = ''
         break
+      }
+      case 'agent_streaming': {
+        const role = event.data.role as string
+        agentStreaming.value = { ...agentStreaming.value, [role]: (agentStreaming.value[role] ?? '') + (event.data.delta as string) }
+        break
+      }
       case 'streaming_chunk':
         streamingChunk.value += event.data.delta as string
         break
@@ -72,11 +81,12 @@ export const useGenerationStore = defineStore('generation', () => {
     messages.value = []
     finalMarkdown.value = null
     streamingChunk.value = ''
+    agentStreaming.value = {}
     errorMessage.value = null
   }
 
   return {
-    activeRunId, runStatus, messages, finalMarkdown, streamingChunk, errorMessage,
+    activeRunId, runStatus, messages, finalMarkdown, streamingChunk, agentStreaming, errorMessage,
     handleWsEvent, startGeneration, stopGeneration, loadRun, reset,
   }
 })
