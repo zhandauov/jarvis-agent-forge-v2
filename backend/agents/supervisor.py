@@ -121,7 +121,7 @@ class SupervisorAgent:
                 full_text += delta
                 await self.bus.publish(self.run_id, {"type": "streaming_chunk", "data": {"delta": delta}})
 
-        return full_text
+        return _extract_markdown_from_aggregate(full_text)
 
 
 def _format_kb(chunks: list[dict]) -> str:
@@ -137,6 +137,21 @@ def _format_worker_results(results: list[WorkerResult]) -> str:
         points = "\n".join(f"  - {p}" for p in r.data_points)
         parts.append(f"**{r.role}**:\n{r.findings}" + (f"\n\nKey data points:\n{points}" if points else ""))
     return "\n\n---\n\n".join(parts)
+
+
+def _extract_markdown_from_aggregate(text: str) -> str:
+    """If Claude still returns JSON for the aggregate step, pull the markdown out of it."""
+    stripped = text.strip()
+    if not stripped.startswith('{'):
+        return text
+    try:
+        data = json.loads(stripped)
+        for key in ('report_section', 'markdown', 'content', 'chapter_content', 'output', 'report'):
+            if key in data and isinstance(data[key], str):
+                return data[key]
+    except json.JSONDecodeError:
+        pass
+    return text
 
 
 def _extract_json(text: str) -> str:
