@@ -28,25 +28,110 @@ function formatDate(d: string) {
 
 <style scoped>
 .report-card {
-  background: #1e1e3a;
-  border: 1px solid #2d2d4e;
-  border-radius: 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-md);
   padding: 20px;
   cursor: pointer;
-  transition: border-color 0.2s, transform 0.1s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
 }
-.report-card:hover { border-color: #7c6af7; transform: translateY(-1px); }
-.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-h3 { margin: 0; font-size: 16px; color: #e0e0ff; }
-.desc { color: #888; font-size: 14px; margin: 0 0 16px; }
-.card-footer { display: flex; justify-content: space-between; align-items: center; }
-.date { font-size: 12px; color: #666; }
-.actions { display: flex; gap: 8px; }
-.btn-ghost { background: transparent; border: 1px solid #3d3d5e; color: #aaa; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 13px; }
-.btn-ghost:hover { border-color: #7c6af7; color: #e0e0ff; }
-.btn-ghost.danger:hover { border-color: #e74c3c; color: #e74c3c; }
-.status-badge { padding: 2px 8px; border-radius: 12px; font-size: 12px; }
-.status-badge.draft { background: #2d2d4e; color: #888; }
-.status-badge.in_progress { background: #1a3a5e; color: #5ba3f5; }
-.status-badge.complete { background: #1a3a2e; color: #4caf7d; }
+
+.report-card:hover {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 1px var(--brand-soft), 0 8px 24px rgba(0, 0, 0, 0.4);
+  transform: translateY(-2px);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--sp-2);
+}
+
+h3 {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--text-1);
+  line-height: 1.4;
+}
+
+.desc {
+  color: var(--text-2);
+  font-size: var(--text-sm);
+  margin: 0;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--sp-2);
+}
+
+.date {
+  font-size: var(--text-xs);
+  color: var(--text-3);
+}
+
+.actions {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border-2);
+  color: var(--text-3);
+  padding: 4px 10px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  font-size: var(--text-xs);
+  font-family: var(--font);
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.btn-ghost:hover {
+  border-color: var(--border-3);
+  color: var(--text-1);
+}
+
+.btn-ghost.danger:hover {
+  border-color: var(--error);
+  color: var(--error);
+}
+
+.status-badge {
+  padding: 2px 8px;
+  border-radius: var(--r-sm);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.status-badge.draft {
+  background: var(--bg-overlay);
+  color: var(--text-3);
+}
+
+.status-badge.in_progress {
+  background: var(--info-bg);
+  color: var(--info);
+}
+
+.status-badge.complete {
+  background: var(--success-bg);
+  color: var(--success);
+}
 </style>

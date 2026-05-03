@@ -15,7 +15,9 @@
       </div>
 
       <div v-if="!chaptersStore.chapters.length" class="empty">
-        <p>No chapters yet. Add a chapter to start building your report.</p>
+        <span class="empty-icon">✦</span>
+        <p>No chapters yet.</p>
+        <span class="empty-hint">Add a chapter to start building your report.</span>
       </div>
       <div v-else class="chapters-list">
         <ChapterCard
@@ -99,17 +101,129 @@ async function deleteChapter(chapterId: number) {
 </script>
 
 <style scoped>
-.report-detail { padding: 32px; max-width: 900px; margin: 0 auto; }
-.page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; gap: 16px; }
+.report-detail {
+  padding: var(--sp-8);
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--sp-8);
+  gap: var(--sp-4);
+}
+
 .title-area { flex: 1; }
-.back-link { display: inline-block; color: #888; text-decoration: none; font-size: 13px; margin-bottom: 8px; }
-.back-link:hover { color: #9d8fff; }
-h1 { margin: 0 0 6px; font-size: 24px; color: #e0e0ff; }
-.desc { margin: 0; color: #888; font-size: 14px; }
-.header-actions { display: flex; gap: 12px; flex-shrink: 0; }
-.btn-primary { background: #7c6af7; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; text-decoration: none; display: inline-flex; align-items: center; }
-.btn-secondary { background: transparent; border: 1px solid #3d3d5e; color: #aaa; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-size: 14px; text-decoration: none; display: inline-flex; align-items: center; }
-.btn-secondary:hover { border-color: #7c6af7; color: #9d8fff; }
-.chapters-list { display: flex; flex-direction: column; gap: 8px; }
-.loading, .empty { color: #666; text-align: center; padding: 60px; }
+
+.back-link {
+  display: inline-block;
+  color: var(--text-3);
+  font-size: var(--text-sm);
+  margin-bottom: var(--sp-2);
+  transition: color 0.15s;
+}
+
+.back-link:hover { color: var(--brand-text); }
+
+h1 {
+  margin: 0 0 6px;
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--text-1);
+  letter-spacing: -0.02em;
+}
+
+.desc {
+  margin: 0;
+  color: var(--text-2);
+  font-size: var(--text-sm);
+}
+
+.header-actions {
+  display: flex;
+  gap: var(--sp-3);
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.btn-primary {
+  background: var(--brand);
+  color: #fff;
+  border: none;
+  padding: 9px var(--sp-4);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  font-family: var(--font);
+  display: inline-flex;
+  align-items: center;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.btn-primary:hover {
+  background: var(--brand-dim);
+  box-shadow: 0 4px 12px rgba(124, 106, 247, 0.3);
+}
+
+.btn-secondary {
+  background: transparent;
+  border: 1px solid var(--border-3);
+  color: var(--text-2);
+  padding: 8px var(--sp-4);
+  border-radius: var(--r-md);
+  font-size: var(--text-sm);
+  font-family: var(--font);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.btn-secondary:hover {
+  border-color: var(--brand);
+  color: var(--brand-text);
+}
+
+.chapters-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.loading {
+  color: var(--text-3);
+  text-align: center;
+  padding: 80px;
+  font-size: var(--text-sm);
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 80px;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 36px;
+  color: var(--border-3);
+  line-height: 1;
+  margin-bottom: var(--sp-2);
+}
+
+.empty p {
+  color: var(--text-2);
+  font-size: var(--text-lg);
+  font-weight: 500;
+}
+
+.empty-hint {
+  color: var(--text-3);
+  font-size: var(--text-sm);
+}
 </style>

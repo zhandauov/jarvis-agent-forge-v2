@@ -7,7 +7,9 @@
 
     <div v-if="store.loading" class="loading">Loading...</div>
     <div v-else-if="!store.reports.length" class="empty">
-      <p>No reports yet. Create your first report to get started.</p>
+      <span class="empty-icon">✦</span>
+      <p>No reports yet.</p>
+      <span class="empty-hint">Create your first report to get started.</span>
     </div>
     <div v-else class="grid">
       <ReportCard
@@ -76,10 +78,82 @@ async function deleteReport(id: number) {
 </script>
 
 <style scoped>
-.home { padding: 32px; max-width: 1200px; margin: 0 auto; }
-.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
-h1 { margin: 0; font-size: 24px; color: #e0e0ff; }
-.btn-primary { background: #7c6af7; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
-.loading, .empty { color: #666; text-align: center; padding: 60px; }
+.home {
+  padding: var(--sp-8);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--sp-8);
+}
+
+h1 {
+  margin: 0;
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--text-1);
+  letter-spacing: -0.02em;
+}
+
+.btn-primary {
+  background: var(--brand);
+  color: #fff;
+  border: none;
+  padding: 9px var(--sp-4);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  font-family: var(--font);
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.btn-primary:hover {
+  background: var(--brand-dim);
+  box-shadow: 0 4px 12px rgba(124, 106, 247, 0.3);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--sp-4);
+}
+
+.loading {
+  color: var(--text-3);
+  text-align: center;
+  padding: 80px;
+  font-size: var(--text-sm);
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 80px;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 36px;
+  color: var(--border-3);
+  line-height: 1;
+  margin-bottom: var(--sp-2);
+}
+
+.empty p {
+  color: var(--text-2);
+  font-size: var(--text-lg);
+  font-weight: 500;
+}
+
+.empty-hint {
+  color: var(--text-3);
+  font-size: var(--text-sm);
+}
 </style>

@@ -23,23 +23,123 @@ defineEmits<{ open: []; edit: []; delete: [] }>()
 
 <style scoped>
 .chapter-card {
-  display: flex; justify-content: space-between; align-items: center;
-  background: #1e1e3a; border: 1px solid #2d2d4e; border-radius: 8px;
-  padding: 14px 16px; transition: border-color 0.2s; cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-md);
+  padding: 14px var(--sp-4);
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
-.chapter-card:hover { border-color: #7c6af7; }
-.left { display: flex; align-items: center; gap: 12px; flex: 1; }
-.index { width: 28px; height: 28px; border-radius: 50%; background: #2d2d4e; color: #9d8fff; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
-.info { display: flex; flex-direction: column; }
-.title { color: #e0e0ff; font-size: 15px; }
-.desc { color: #666; font-size: 13px; }
-.right { display: flex; align-items: center; gap: 8px; }
-.status { padding: 2px 8px; border-radius: 12px; font-size: 12px; }
-.status.pending { background: #2d2d4e; color: #888; }
-.status.running { background: #1a3a5e; color: #5ba3f5; }
-.status.complete { background: #1a3a2e; color: #4caf7d; }
-.status.error { background: #3a1a1a; color: #e74c3c; }
-.btn-ghost { background: transparent; border: 1px solid #3d3d5e; color: #aaa; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 13px; }
-.btn-ghost:hover { border-color: #7c6af7; color: #e0e0ff; }
-.btn-ghost.danger:hover { border-color: #e74c3c; color: #e74c3c; }
+
+.chapter-card:hover {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 1px var(--brand-soft), 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex: 1;
+  min-width: 0;
+}
+
+.index {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-2);
+  color: var(--brand-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.title {
+  color: var(--text-1);
+  font-size: var(--text-base);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.desc {
+  color: var(--text-3);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-shrink: 0;
+}
+
+.status {
+  padding: 2px 8px;
+  border-radius: var(--r-sm);
+  font-size: var(--text-xs);
+  font-weight: 500;
+}
+
+.status.pending {
+  background: var(--bg-overlay);
+  color: var(--text-3);
+}
+
+.status.running {
+  background: var(--info-bg);
+  color: var(--info);
+}
+
+.status.complete {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.status.error {
+  background: var(--error-bg);
+  color: var(--error);
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border-2);
+  color: var(--text-3);
+  padding: 4px 10px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  font-size: var(--text-xs);
+  font-family: var(--font);
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.btn-ghost:hover {
+  border-color: var(--border-3);
+  color: var(--text-1);
+}
+
+.btn-ghost.danger:hover {
+  border-color: var(--error);
+  color: var(--error);
+}
 </style>
