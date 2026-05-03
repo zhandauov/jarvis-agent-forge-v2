@@ -7,6 +7,7 @@ import anthropic
 from agents.message_bus import MessageBus
 
 _cancel_flags: set[int] = set()
+_run_semaphore = asyncio.Semaphore(2)
 
 
 def cancel_run(run_id: int) -> None:
@@ -17,7 +18,7 @@ def _check_cancelled(run_id: int) -> None:
     if run_id in _cancel_flags:
         _cancel_flags.discard(run_id)
         raise asyncio.CancelledError(f"Run {run_id} cancelled by user")
-    
+
 from agents.models import WorkerResult
 from agents.prompts import SUPERVISOR_SYSTEM_DEFAULT, WORKER_SYSTEM_DEFAULT
 from agents.supervisor import SupervisorAgent
@@ -27,6 +28,11 @@ from knowledge_base.store import KBStore
 
 
 async def run_generation(run_id: int) -> None:
+    async with _run_semaphore:
+        await _run_generation_inner(run_id)
+
+
+async def _run_generation_inner(run_id: int) -> None:
     from core.database import AsyncSessionLocal
     from models.chapter import Chapter
     from models.agent_config import AgentTeamConfig
