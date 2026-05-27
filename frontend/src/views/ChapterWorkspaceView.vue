@@ -1,15 +1,26 @@
 <template>
   <div class="workspace">
     <div class="workspace-header">
-      <router-link :to="`/reports/${reportId}`" class="back-link">← Report</router-link>
-      <h2>{{ chapter?.title ?? 'Loading...' }}</h2>
+      <div class="header-left">
+        <router-link :to="`/reports/${reportId}`" class="back-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+          </svg>
+          <span>Report</span>
+        </router-link>
+        <span class="header-divider"></span>
+        <h2>{{ chapter?.title ?? 'Loading...' }}</h2>
+      </div>
       <GenerationStatus :status="genStore.runStatus" />
     </div>
 
     <div v-if="chapter" class="workspace-body">
       <!-- Chapters nav -->
       <div class="panel panel-chapters">
-        <div class="panel-title">Chapters</div>
+        <div class="panel-header">
+          <span class="panel-title">Chapters</span>
+        </div>
         <nav class="chapters-nav">
           <router-link
             v-for="ch in chaptersStore.chapters"
@@ -17,7 +28,7 @@
             :to="`/reports/${reportId}/chapters/${ch.id}`"
             :class="['chapter-link', { active: ch.id === chapterId }]"
           >
-            <span class="ch-status" :class="ch.status" />
+            <span :class="['ch-status', ch.status]"></span>
             <span class="ch-title">{{ ch.title }}</span>
           </router-link>
         </nav>
@@ -37,7 +48,9 @@
 
       <!-- Middle: Conversation -->
       <div class="panel panel-conversation">
-        <div class="panel-title">Agent Conversation</div>
+        <div class="panel-header">
+          <span class="panel-title">Agent Conversation</span>
+        </div>
         <AgentConversation
           :messages="genStore.messages"
           :streaming-chunk="genStore.streamingChunk"
@@ -55,7 +68,12 @@
     </div>
 
     <div v-if="genStore.errorMessage" class="error-bar">
-      Error: {{ genStore.errorMessage }}
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span>{{ genStore.errorMessage }}</span>
     </div>
   </div>
 </template>
@@ -116,48 +134,175 @@ function onConfigSaved() {
 </script>
 
 <style scoped>
-.workspace { display: flex; flex-direction: column; height: calc(100vh - 56px); }
+.workspace { 
+  display: flex; 
+  flex-direction: column; 
+  height: calc(100vh - 56px);
+  background: var(--bg-root);
+}
+
 .workspace-header {
-  display: flex; align-items: center; gap: 16px;
-  padding: 12px 24px; border-bottom: 1px solid #2d2d4e;
-  background: #14142a; flex-shrink: 0;
-}
-.back-link { color: #888; text-decoration: none; font-size: 14px; white-space: nowrap; }
-.back-link:hover { color: #9d8fff; }
-h2 { margin: 0; font-size: 18px; color: #e0e0ff; flex: 1; }
-.workspace-body {
-  display: grid; grid-template-columns: 180px 280px 1fr 1fr;
-  flex: 1; overflow: hidden;
-}
-.panel {
-  border-right: 1px solid #2d2d4e; overflow: hidden;
-  display: flex; flex-direction: column;
-}
-.panel:last-child { border-right: none; }
-.panel-title {
-  padding: 12px 16px; border-bottom: 1px solid #2d2d4e;
-  font-size: 13px; color: #888; text-transform: uppercase; letter-spacing: 0.5px;
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between;
+  gap: var(--sp-4);
+  padding: var(--sp-3) var(--sp-5);
+  border-bottom: 1px solid var(--border-1);
+  background: var(--bg-surface);
   flex-shrink: 0;
 }
-.panel-chapters { background: #12122a; }
-.chapters-nav { display: flex; flex-direction: column; gap: 2px; padding: 8px; overflow-y: auto; flex: 1; }
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+.back-link { 
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--text-3); 
+  text-decoration: none; 
+  font-size: var(--text-sm);
+  white-space: nowrap;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+.back-link:hover { 
+  color: var(--brand-text); 
+}
+
+.header-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--border-2);
+}
+
+h2 { 
+  margin: 0; 
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.workspace-body {
+  display: grid; 
+  grid-template-columns: 180px 300px 1fr 1fr;
+  flex: 1; 
+  overflow: hidden;
+}
+
+.panel {
+  border-right: 1px solid var(--border-1);
+  overflow: hidden;
+  display: flex; 
+  flex-direction: column;
+  background: var(--bg-base);
+}
+
+.panel:last-child { 
+  border-right: none; 
+}
+
+.panel-header {
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--border-1);
+  flex-shrink: 0;
+  background: var(--bg-surface);
+}
+
+.panel-title {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.panel-chapters { 
+  background: var(--bg-surface);
+}
+
+.chapters-nav { 
+  display: flex; 
+  flex-direction: column; 
+  gap: var(--sp-1);
+  padding: var(--sp-2);
+  overflow-y: auto; 
+  flex: 1;
+}
+
 .chapter-link {
-  display: flex; align-items: flex-start; gap: 8px;
-  padding: 8px 10px; border-radius: 6px; text-decoration: none;
-  color: #aaa; font-size: 13px; transition: background 0.15s;
+  display: flex; 
+  align-items: flex-start; 
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  border-radius: var(--r-md);
+  text-decoration: none;
+  color: var(--text-2);
+  font-size: var(--text-sm);
+  transition: all var(--duration-fast) var(--ease-out);
 }
-.chapter-link:hover { background: #1e1e3a; color: #e0e0ff; }
-.chapter-link.active { background: #2d2d5e; color: #9d8fff; }
+
+.chapter-link:hover { 
+  background: var(--bg-hover);
+  color: var(--text-1);
+}
+
+.chapter-link.active { 
+  background: var(--brand-soft);
+  color: var(--brand-text);
+}
+
 .ch-status {
-  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 5px;
+  background: var(--text-4);
 }
-.ch-status.pending { background: #555; }
-.ch-status.running { background: #5ba3f5; }
-.ch-status.complete { background: #4caf7d; }
-.ch-status.error { background: #e74c3c; }
-.ch-title { line-height: 1.3; }
+
+.ch-status.pending { 
+  background: var(--text-4);
+}
+
+.ch-status.running { 
+  background: var(--info);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.ch-status.complete { 
+  background: var(--success);
+}
+
+.ch-status.error { 
+  background: var(--error);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.ch-title { 
+  line-height: var(--leading-snug);
+}
+
 .error-bar {
-  background: #3a1a1a; border-top: 1px solid #e74c3c;
-  color: #e74c3c; padding: 10px 24px; font-size: 14px; flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  background: var(--error-soft);
+  border-top: 1px solid var(--error);
+  color: var(--error);
+  padding: var(--sp-3) var(--sp-5);
+  font-size: var(--text-sm);
+  flex-shrink: 0;
 }
 </style>

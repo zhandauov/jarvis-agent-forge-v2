@@ -23,16 +23,50 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-a { color: var(--brand-text); text-decoration: none; }
-a:hover { color: var(--brand); }
+a { 
+  color: var(--brand-text); 
+  text-decoration: none;
+  transition: color var(--duration-fast) var(--ease-out);
+}
 
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--bg-surface); }
-::-webkit-scrollbar-thumb { background: var(--border-3); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--brand-dim); }
+a:hover { 
+  color: var(--brand-hover); 
+}
+
+::-webkit-scrollbar { 
+  width: 8px; 
+  height: 8px; 
+}
+
+::-webkit-scrollbar-track { 
+  background: transparent; 
+}
+
+::-webkit-scrollbar-thumb { 
+  background: var(--border-3); 
+  border-radius: var(--r-full);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover { 
+  background: var(--text-4);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
 </style>
 
 <style scoped>
-.app { display: flex; flex-direction: column; min-height: 100vh; }
-.main-content { flex: 1; }
+.app { 
+  display: flex; 
+  flex-direction: column; 
+  min-height: 100vh;
+  background: var(--bg-root);
+}
+
+.main-content { 
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
 </style>
