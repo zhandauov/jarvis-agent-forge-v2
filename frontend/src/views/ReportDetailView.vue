@@ -1,24 +1,61 @@
 <template>
   <div class="report-detail">
-    <div v-if="loading" class="loading">Loading...</div>
+    <div v-if="loading" class="loading-state">
+      <div class="loading-spinner"></div>
+      <span>Loading report...</span>
+    </div>
+    
     <template v-else-if="report">
       <div class="page-header">
         <div class="title-area">
-          <router-link to="/" class="back-link">← Back</router-link>
+          <router-link to="/" class="back-link">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"/>
+              <polyline points="12 19 5 12 12 5"/>
+            </svg>
+            <span>Back to Reports</span>
+          </router-link>
           <h1>{{ report.title }}</h1>
           <p v-if="report.description" class="desc">{{ report.description }}</p>
         </div>
         <div class="header-actions">
-          <router-link :to="`/reports/${report.id}/kb`" class="btn-secondary">Knowledge Base</router-link>
-          <button class="btn-primary" @click="showChapterForm = true">+ Add Chapter</button>
+          <router-link :to="`/reports/${report.id}/kb`" class="btn-secondary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            </svg>
+            <span>Knowledge Base</span>
+          </router-link>
+          <button class="btn-primary" @click="showChapterForm = true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            <span>Add Chapter</span>
+          </button>
         </div>
       </div>
 
-      <div v-if="!chaptersStore.chapters.length" class="empty">
-        <span class="empty-icon">✦</span>
-        <p>No chapters yet.</p>
-        <span class="empty-hint">Add a chapter to start building your report.</span>
+      <div v-if="!chaptersStore.chapters.length" class="empty-state">
+        <div class="empty-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            <line x1="12" y1="6" x2="12" y2="14"/>
+            <line x1="8" y1="10" x2="16" y2="10"/>
+          </svg>
+        </div>
+        <h2 class="empty-title">No chapters yet</h2>
+        <p class="empty-hint">Add chapters to structure your report. Each chapter can be generated with AI assistance.</p>
+        <button class="btn-create-empty" @click="showChapterForm = true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          <span>Add First Chapter</span>
+        </button>
       </div>
+      
       <div v-else class="chapters-list">
         <ChapterCard
           v-for="(chapter, i) in chaptersStore.chapters"
@@ -103,8 +140,9 @@ async function deleteChapter(chapterId: number) {
 <style scoped>
 .report-detail {
   padding: var(--sp-8);
-  max-width: 900px;
+  max-width: 960px;
   margin: 0 auto;
+  width: 100%;
 }
 
 .page-header {
@@ -112,23 +150,31 @@ async function deleteChapter(chapterId: number) {
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: var(--sp-8);
-  gap: var(--sp-4);
+  gap: var(--sp-6);
+  flex-wrap: wrap;
 }
 
-.title-area { flex: 1; }
+.title-area { 
+  flex: 1;
+  min-width: 200px;
+}
 
 .back-link {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
   color: var(--text-3);
   font-size: var(--text-sm);
-  margin-bottom: var(--sp-2);
-  transition: color 0.15s;
+  margin-bottom: var(--sp-3);
+  transition: color var(--duration-fast) var(--ease-out);
 }
 
-.back-link:hover { color: var(--brand-text); }
+.back-link:hover { 
+  color: var(--brand-text); 
+}
 
 h1 {
-  margin: 0 0 6px;
+  margin: 0 0 var(--sp-2);
   font-size: var(--text-2xl);
   font-weight: 700;
   color: var(--text-1);
@@ -137,8 +183,9 @@ h1 {
 
 .desc {
   margin: 0;
-  color: var(--text-2);
-  font-size: var(--text-sm);
+  color: var(--text-3);
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
 }
 
 .header-actions {
@@ -149,81 +196,132 @@ h1 {
 }
 
 .btn-primary {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
   background: var(--brand);
   color: #fff;
   border: none;
-  padding: 9px var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
   border-radius: var(--r-md);
   cursor: pointer;
   font-size: var(--text-sm);
   font-weight: 500;
   font-family: var(--font);
-  display: inline-flex;
-  align-items: center;
-  transition: background 0.15s, box-shadow 0.15s;
+  transition: all var(--duration-fast) var(--ease-out);
 }
 
 .btn-primary:hover {
-  background: var(--brand-dim);
-  box-shadow: 0 4px 12px rgba(124, 106, 247, 0.3);
+  background: var(--brand-hover);
+  box-shadow: var(--shadow-glow);
 }
 
 .btn-secondary {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
   background: transparent;
-  border: 1px solid var(--border-3);
+  border: 1px solid var(--border-2);
   color: var(--text-2);
-  padding: 8px var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
   border-radius: var(--r-md);
   font-size: var(--text-sm);
+  font-weight: 500;
   font-family: var(--font);
   text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  transition: border-color 0.15s, color 0.15s;
+  transition: all var(--duration-fast) var(--ease-out);
 }
 
 .btn-secondary:hover {
   border-color: var(--brand);
   color: var(--brand-text);
+  background: var(--brand-soft);
 }
 
 .chapters-list {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-2);
+  gap: var(--sp-3);
 }
 
-.loading {
-  color: var(--text-3);
-  text-align: center;
-  padding: 80px;
-  font-size: var(--text-sm);
-}
-
-.empty {
+.loading-state {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--sp-2);
-  padding: 80px;
+  gap: var(--sp-4);
+  padding: var(--sp-16);
+  color: var(--text-3);
+  font-size: var(--text-sm);
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border-2);
+  border-top-color: var(--brand);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-16);
   text-align: center;
 }
 
 .empty-icon {
-  font-size: 36px;
-  color: var(--border-3);
-  line-height: 1;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-overlay);
+  border-radius: var(--r-xl);
+  color: var(--text-4);
   margin-bottom: var(--sp-2);
 }
 
-.empty p {
+.empty-title {
   color: var(--text-2);
-  font-size: var(--text-lg);
-  font-weight: 500;
+  font-size: var(--text-xl);
+  font-weight: 600;
+  margin: 0;
 }
 
 .empty-hint {
   color: var(--text-3);
-  font-size: var(--text-sm);
+  font-size: var(--text-base);
+  max-width: 360px;
+  margin: 0;
+  line-height: var(--leading-relaxed);
+}
+
+.btn-create-empty {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  background: var(--brand);
+  color: #fff;
+  border: none;
+  padding: var(--sp-3) var(--sp-5);
+  border-radius: var(--r-lg);
+  cursor: pointer;
+  font-size: var(--text-base);
+  font-weight: 500;
+  font-family: var(--font);
+  transition: all var(--duration-fast) var(--ease-out);
+  margin-top: var(--sp-2);
+}
+
+.btn-create-empty:hover {
+  background: var(--brand-hover);
+  box-shadow: var(--shadow-glow);
 }
 </style>

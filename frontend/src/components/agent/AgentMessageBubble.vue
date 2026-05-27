@@ -1,8 +1,8 @@
 <template>
   <div :class="['bubble', roleClass]">
     <div class="bubble-header">
-      <span class="role-badge">{{ displayRole }}</span>
-      <span class="type-badge">{{ message.message_type }}</span>
+      <span :class="['role-badge', `badge-${roleClass}`]">{{ displayRole }}</span>
+      <span class="type-badge">{{ messageTypeLabel }}</span>
     </div>
     <div class="content" v-html="renderedContent" />
   </div>
@@ -26,29 +26,164 @@ const displayRole = computed(() => {
   return r.charAt(0).toUpperCase() + r.slice(1).replace(/_/g, ' ')
 })
 
+const messageTypeLabel = computed(() => {
+  const type = props.message.message_type
+  switch (type) {
+    case 'final': return 'Final Output'
+    case 'tool_call': return 'Tool Call'
+    case 'tool_result': return 'Tool Result'
+    default: return type.charAt(0).toUpperCase() + type.slice(1).replace(/_/g, ' ')
+  }
+})
+
 const renderedContent = computed(() => marked.parse(props.message.content) as string)
 </script>
 
 <style scoped>
 .bubble {
-  border-radius: 8px; padding: 14px 16px; margin-bottom: 8px;
+  border-radius: var(--r-lg);
+  padding: var(--sp-4);
   border-left: 3px solid transparent;
+  background: var(--bg-elevated);
 }
-.supervisor { background: #1a1a3a; border-left-color: #7c6af7; }
-.worker { background: #1a2a1a; border-left-color: #4caf7d; }
-.final { background: #1a2a3a; border-left-color: #5ba3f5; }
-.bubble-header { display: flex; gap: 8px; margin-bottom: 8px; }
-.role-badge { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #9d8fff; }
-.supervisor .role-badge { color: #9d8fff; }
-.worker .role-badge { color: #4caf7d; }
-.final .role-badge { color: #5ba3f5; }
-.type-badge { font-size: 11px; background: #2d2d4e; color: #888; padding: 1px 6px; border-radius: 10px; }
-.content { color: #d0d0e8; font-size: 14px; line-height: 1.6; }
-.content :deep(h1), .content :deep(h2), .content :deep(h3) { color: #e0e0ff; margin: 12px 0 6px; }
-.content :deep(strong) { color: #e0e0ff; }
-.content :deep(p) { margin: 6px 0; }
-.content :deep(ul), .content :deep(ol) { margin: 6px 0; padding-left: 20px; }
-.content :deep(table) { border-collapse: collapse; width: 100%; }
-.content :deep(td), .content :deep(th) { border: 1px solid #3d3d5e; padding: 6px 10px; }
-.content :deep(th) { background: #2d2d4e; color: #e0e0ff; }
+
+.supervisor { 
+  border-left-color: var(--brand);
+}
+
+.worker { 
+  border-left-color: var(--success);
+}
+
+.final { 
+  border-left-color: var(--info);
+  background: var(--info-soft);
+}
+
+.bubble-header { 
+  display: flex; 
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+
+.role-badge { 
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.badge-supervisor { 
+  color: var(--brand-text);
+}
+
+.badge-worker { 
+  color: var(--success);
+}
+
+.badge-final { 
+  color: var(--info);
+}
+
+.type-badge { 
+  font-size: var(--text-xs);
+  background: var(--bg-overlay);
+  color: var(--text-3);
+  padding: 2px var(--sp-2);
+  border-radius: var(--r-full);
+}
+
+.content { 
+  color: var(--text-2);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+}
+
+.content :deep(h1), 
+.content :deep(h2), 
+.content :deep(h3) { 
+  color: var(--text-1);
+  margin: var(--sp-4) 0 var(--sp-2);
+  font-weight: 600;
+}
+
+.content :deep(h1) { font-size: var(--text-lg); }
+.content :deep(h2) { font-size: var(--text-base); }
+.content :deep(h3) { font-size: var(--text-sm); }
+
+.content :deep(strong) { 
+  color: var(--text-1);
+  font-weight: 600;
+}
+
+.content :deep(p) { 
+  margin: var(--sp-2) 0;
+}
+
+.content :deep(p:first-child) {
+  margin-top: 0;
+}
+
+.content :deep(p:last-child) {
+  margin-bottom: 0;
+}
+
+.content :deep(ul), 
+.content :deep(ol) { 
+  margin: var(--sp-2) 0;
+  padding-left: var(--sp-5);
+}
+
+.content :deep(li) {
+  margin: var(--sp-1) 0;
+}
+
+.content :deep(table) { 
+  border-collapse: collapse;
+  width: 100%;
+  margin: var(--sp-3) 0;
+  font-size: var(--text-xs);
+}
+
+.content :deep(td), 
+.content :deep(th) { 
+  border: 1px solid var(--border-2);
+  padding: var(--sp-2) var(--sp-3);
+}
+
+.content :deep(th) { 
+  background: var(--bg-overlay);
+  color: var(--text-1);
+  font-weight: 600;
+  text-align: left;
+}
+
+.content :deep(code) {
+  background: var(--bg-overlay);
+  padding: 2px var(--sp-1);
+  border-radius: var(--r-xs);
+  font-size: var(--text-xs);
+  font-family: var(--font-mono);
+}
+
+.content :deep(pre) {
+  background: var(--bg-overlay);
+  padding: var(--sp-3);
+  border-radius: var(--r-md);
+  overflow-x: auto;
+  margin: var(--sp-3) 0;
+}
+
+.content :deep(pre code) {
+  background: none;
+  padding: 0;
+}
+
+.content :deep(blockquote) {
+  border-left: 3px solid var(--border-3);
+  margin: var(--sp-3) 0;
+  padding: var(--sp-2) var(--sp-4);
+  color: var(--text-3);
+}
 </style>

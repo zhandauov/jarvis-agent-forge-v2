@@ -1,8 +1,8 @@
 <template>
   <div :class="['gen-status', status]">
-    <span class="indicator" />
-    <span class="label">{{ label }}</span>
-    <span v-if="status === 'running'" class="spinner" />
+    <span class="status-dot"></span>
+    <span class="status-label">{{ label }}</span>
+    <span v-if="status === 'running'" class="status-spinner"></span>
   </div>
 </template>
 
@@ -22,19 +22,66 @@ const label = computed(() => ({
 
 <style scoped>
 .gen-status {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 6px 14px; border-radius: 20px; font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-full);
+  font-size: var(--text-xs);
+  font-weight: 500;
 }
-.idle { background: #2d2d4e; color: #888; }
-.pending { background: #2d2d1a; color: #f5c842; }
-.running { background: #1a3a5e; color: #5ba3f5; }
-.complete { background: #1a3a2e; color: #4caf7d; }
-.error { background: #3a1a1a; color: #e74c3c; }
-.indicator { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-.spinner {
-  width: 12px; height: 12px; border: 2px solid currentColor;
-  border-top-color: transparent; border-radius: 50%;
+
+.idle { 
+  background: var(--bg-overlay);
+  color: var(--text-3);
+}
+
+.pending { 
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.running { 
+  background: var(--info-soft);
+  color: var(--info);
+}
+
+.complete { 
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.error { 
+  background: var(--error-soft);
+  color: var(--error);
+}
+
+.status-dot { 
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.running .status-dot {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.status-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+
+@keyframes spin { 
+  to { transform: rotate(360deg); } 
+}
 </style>

@@ -1,25 +1,54 @@
 <template>
   <div class="login-wrapper">
+    <div class="login-bg-gradient"></div>
     <form class="login-card" @submit.prevent="submit">
       <div class="logo-area">
-        <span class="logo-dot"></span>
-        <h1>Jarvis</h1>
-      </div>
-      <p class="subtitle">Consulting Platform</p>
-
-      <div class="field">
-        <label>Логин</label>
-        <input v-model="username" type="text" autocomplete="username" placeholder="username" required />
-      </div>
-      <div class="field">
-        <label>Пароль</label>
-        <input v-model="password" type="password" autocomplete="current-password" placeholder="••••••••" required />
+        <div class="logo-container">
+          <span class="logo-dot"></span>
+        </div>
+        <div class="logo-text">
+          <h1>Jarvis</h1>
+          <p class="subtitle">Consulting Platform</p>
+        </div>
       </div>
 
-      <p v-if="error" class="error">{{ error }}</p>
+      <div class="form-fields">
+        <div class="field">
+          <label for="username">Login</label>
+          <input 
+            id="username"
+            v-model="username" 
+            type="text" 
+            autocomplete="username" 
+            placeholder="Enter your username" 
+            required 
+          />
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input 
+            id="password"
+            v-model="password" 
+            type="password" 
+            autocomplete="current-password" 
+            placeholder="Enter your password" 
+            required 
+          />
+        </div>
+      </div>
 
-      <button type="submit" :disabled="loading">
-        {{ loading ? 'Вход...' : 'Войти' }}
+      <div v-if="error" class="error-message">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span>{{ error }}</span>
+      </div>
+
+      <button type="submit" class="submit-btn" :disabled="loading">
+        <span v-if="loading" class="spinner"></span>
+        <span>{{ loading ? 'Signing in...' : 'Sign in' }}</span>
       </button>
     </form>
   </div>
@@ -45,7 +74,7 @@ async function submit() {
     await auth.login(username.value, password.value)
     router.push('/')
   } catch {
-    error.value = 'Неверный логин или пароль'
+    error.value = 'Invalid login or password'
   } finally {
     loading.value = false
   }
@@ -59,56 +88,90 @@ async function submit() {
   align-items: center;
   justify-content: center;
   background: var(--bg-root);
-  background-image: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(124, 106, 247, 0.18) 0%, transparent 60%);
+  padding: var(--sp-6);
+  position: relative;
+  overflow: hidden;
+}
+
+.login-bg-gradient {
+  position: absolute;
+  inset: 0;
+  background: 
+    radial-gradient(ellipse 60% 40% at 50% 0%, var(--brand-glow) 0%, transparent 50%),
+    radial-gradient(ellipse 40% 30% at 80% 80%, rgba(96, 165, 250, 0.08) 0%, transparent 50%);
+  pointer-events: none;
 }
 
 .login-card {
+  position: relative;
   background: var(--bg-surface);
-  border: 1px solid var(--border-2);
-  border-radius: var(--r-xl);
-  padding: 48px;
-  width: 400px;
-  max-width: calc(100vw - 48px);
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-2xl);
+  padding: var(--sp-10);
+  width: 100%;
+  max-width: 400px;
   display: flex;
   flex-direction: column;
-  gap: var(--sp-4);
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  gap: var(--sp-6);
+  box-shadow: var(--shadow-xl), 0 0 80px -20px var(--brand-glow);
 }
 
 .logo-area {
   display: flex;
   align-items: center;
-  gap: var(--sp-2);
-  margin-bottom: var(--sp-1);
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-2);
+}
+
+.logo-container {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-overlay);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border-2);
 }
 
 .logo-dot {
-  width: 10px;
-  height: 10px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  background: var(--brand);
-  box-shadow: 0 0 10px var(--brand);
-  flex-shrink: 0;
+  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-hover) 100%);
+  box-shadow: 0 0 20px var(--brand-glow);
+}
+
+.logo-text {
+  display: flex;
+  flex-direction: column;
 }
 
 h1 {
-  font-size: var(--text-3xl);
+  font-size: var(--text-2xl);
   font-weight: 700;
   color: var(--text-1);
   letter-spacing: -0.02em;
+  margin: 0;
+  line-height: 1.2;
 }
 
 .subtitle {
   color: var(--text-3);
   font-size: var(--text-sm);
-  margin-top: calc(-1 * var(--sp-3));
-  margin-bottom: var(--sp-2);
+  margin: 0;
+}
+
+.form-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-1);
+  gap: var(--sp-2);
 }
 
 label {
@@ -118,19 +181,24 @@ label {
 }
 
 input {
-  padding: 10px var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
   background: var(--bg-elevated);
   border: 1px solid var(--border-2);
-  border-radius: var(--r-md);
+  border-radius: var(--r-lg);
   font-size: var(--text-base);
   font-family: var(--font);
   color: var(--text-1);
   outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color var(--duration-fast) var(--ease-out), 
+              box-shadow var(--duration-fast) var(--ease-out);
 }
 
 input::placeholder {
-  color: var(--text-3);
+  color: var(--text-4);
+}
+
+input:hover:not(:focus) {
+  border-color: var(--border-3);
 }
 
 input:focus {
@@ -138,33 +206,64 @@ input:focus {
   box-shadow: 0 0 0 3px var(--brand-soft);
 }
 
-button[type="submit"] {
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--error-soft);
+  border: 1px solid rgba(248, 113, 113, 0.2);
+  border-radius: var(--r-md);
+  color: var(--error);
+  font-size: var(--text-sm);
+}
+
+.error-message svg {
+  flex-shrink: 0;
+}
+
+.submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
   margin-top: var(--sp-2);
-  padding: 12px;
+  padding: var(--sp-3) var(--sp-4);
   background: var(--brand);
   color: #fff;
   border: none;
-  border-radius: var(--r-md);
+  border-radius: var(--r-lg);
   font-size: var(--text-base);
   font-weight: 600;
   font-family: var(--font);
   cursor: pointer;
-  transition: background 0.15s, box-shadow 0.15s;
+  transition: all var(--duration-fast) var(--ease-out);
 }
 
-button[type="submit"]:hover:not(:disabled) {
+.submit-btn:hover:not(:disabled) {
+  background: var(--brand-hover);
+  box-shadow: var(--shadow-glow);
+}
+
+.submit-btn:active:not(:disabled) {
   background: var(--brand-dim);
-  box-shadow: 0 4px 16px rgba(124, 106, 247, 0.35);
 }
 
-button[type="submit"]:disabled {
-  opacity: 0.5;
+.submit-btn:disabled {
+  opacity: 0.7;
   cursor: not-allowed;
 }
 
-.error {
-  color: var(--error);
-  font-size: var(--text-sm);
-  margin: 0;
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 </style>
