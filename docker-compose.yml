@@ -7,7 +7,7 @@ networks:
 services:
   backend:
     build: ./backend
-    env_file: ./backend/.env
+    env_file: ./.env
     volumes:
       - kb_uploads:/app/uploads
       - sqlite_data:/app/data
