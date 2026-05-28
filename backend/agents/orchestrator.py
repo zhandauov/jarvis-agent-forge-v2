@@ -20,7 +20,14 @@ def _check_cancelled(run_id: int) -> None:
         raise asyncio.CancelledError(f"Run {run_id} cancelled by user")
 
 from agents.models import WorkerResult
-from agents.prompts import SUPERVISOR_SYSTEM_DEFAULT, WORKER_SYSTEM_DEFAULT
+from agents.prompts import (
+    AGGREGATE_USER_TEMPLATE,
+    KB_SECTION_TEMPLATE,
+    PLAN_USER_TEMPLATE,
+    REVIEW_USER_TEMPLATE,
+    SUPERVISOR_SYSTEM_DEFAULT,
+    WORKER_SYSTEM_DEFAULT,
+)
 from agents.supervisor import SupervisorAgent
 from agents.worker import WorkerAgent
 from core.config import settings
@@ -70,13 +77,27 @@ async def _run_generation_inner(run_id: int) -> None:
             worker_roles: list[str] = json.loads(config.worker_roles)
             kb_chunks = KBStore.instance().search(chapter.report_id, f"{chapter.title} {chapter.description or ''}", top_k=10)
 
+            from models.prompt_template import PromptTemplate
+            pt_result = await db.execute(select(PromptTemplate))
+            pt_map = {pt.key: pt.body for pt in pt_result.scalars().all()}
+
             client = anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
-            supervisor_prompt = config.supervisor_prompt or SUPERVISOR_SYSTEM_DEFAULT
-            worker_base_prompt = config.worker_prompt or WORKER_SYSTEM_DEFAULT
+            supervisor_prompt = config.supervisor_prompt or pt_map.get("supervisor_system", SUPERVISOR_SYSTEM_DEFAULT)
+            worker_base_prompt = config.worker_prompt or pt_map.get("worker_system", WORKER_SYSTEM_DEFAULT)
 
             agent_model = config.model or "claude-sonnet-4-6"
             internet_access = bool(config.internet_access)
-            supervisor = SupervisorAgent(supervisor_prompt, client, run_id, bus, model=agent_model)
+            supervisor = SupervisorAgent(
+                supervisor_prompt,
+                client,
+                run_id,
+                bus,
+                model=agent_model,
+                plan_template=pt_map.get("plan_user", PLAN_USER_TEMPLATE),
+                review_template=pt_map.get("review_user", REVIEW_USER_TEMPLATE),
+                aggregate_template=pt_map.get("aggregate_user", AGGREGATE_USER_TEMPLATE),
+                kb_section_template=pt_map.get("kb_section", KB_SECTION_TEMPLATE),
+            )
             workers = {
                 role: WorkerAgent(role, worker_base_prompt, client, model=agent_model, internet_access=internet_access)
                 for role in worker_roles

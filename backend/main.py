@@ -3,14 +3,16 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from agents.prompt_seeder import seed_default_prompts
 from core.database import create_tables
 from knowledge_base.store import KBStore
-from routers import reports, chapters, agent_configs, knowledge_base, generation, websocket, auth
+from routers import reports, chapters, agent_configs, knowledge_base, generation, websocket, auth, prompts
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await create_tables()
+    await seed_default_prompts()
     await KBStore.instance().reload_from_db()
     yield
 
@@ -32,6 +34,7 @@ app.include_router(agent_configs.router)
 app.include_router(knowledge_base.router)
 app.include_router(generation.router)
 app.include_router(websocket.router)
+app.include_router(prompts.router)
 
 
 @app.get("/health")

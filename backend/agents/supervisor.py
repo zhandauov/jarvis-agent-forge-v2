@@ -5,12 +5,6 @@ import anthropic
 
 from agents.message_bus import MessageBus
 from agents.models import PlanResult, SupervisorDecision, WorkerResult, WorkerTask
-from agents.prompts import (
-    AGGREGATE_USER_TEMPLATE,
-    KB_SECTION_TEMPLATE,
-    PLAN_USER_TEMPLATE,
-    REVIEW_USER_TEMPLATE,
-)
 
 
 class SupervisorAgent:
@@ -21,12 +15,20 @@ class SupervisorAgent:
         run_id: int,
         bus: MessageBus,
         model: str = "claude-sonnet-4-6",
+        plan_template: str = "",
+        review_template: str = "",
+        aggregate_template: str = "",
+        kb_section_template: str = "",
     ) -> None:
         self.system_prompt = supervisor_prompt
         self.client = client
         self.run_id = run_id
         self.bus = bus
         self.model = model
+        self.plan_template = plan_template
+        self.review_template = review_template
+        self.aggregate_template = aggregate_template
+        self.kb_section_template = kb_section_template
 
     async def create_plan(
         self,
@@ -35,10 +37,10 @@ class SupervisorAgent:
         worker_roles: list[str],
         kb_chunks: list[dict],
     ) -> PlanResult:
-        kb_section = _format_kb(kb_chunks)
+        kb_section = _format_kb(kb_chunks, self.kb_section_template)
         roles_list = "\n".join(f"- {r}" for r in worker_roles)
 
-        user_msg = PLAN_USER_TEMPLATE.format(
+        user_msg = self.plan_template.format(
             chapter_title=chapter_title,
             chapter_description=chapter_description or "",
             kb_section=kb_section,
@@ -67,7 +69,7 @@ class SupervisorAgent:
         worker_results: list[WorkerResult],
     ) -> SupervisorDecision:
         outputs = _format_worker_results(worker_results)
-        user_msg = REVIEW_USER_TEMPLATE.format(
+        user_msg = self.review_template.format(
             chapter_title=chapter_title,
             worker_outputs=outputs,
         )
@@ -100,10 +102,10 @@ class SupervisorAgent:
         all_results: list[WorkerResult],
         kb_chunks: list[dict],
     ) -> str:
-        kb_section = _format_kb(kb_chunks)
+        kb_section = _format_kb(kb_chunks, self.kb_section_template)
         findings = _format_worker_results(all_results)
 
-        user_msg = AGGREGATE_USER_TEMPLATE.format(
+        user_msg = self.aggregate_template.format(
             chapter_title=chapter_title,
             chapter_description=chapter_description or "",
             all_findings=findings,
@@ -124,11 +126,11 @@ class SupervisorAgent:
         return _extract_markdown_from_aggregate(full_text)
 
 
-def _format_kb(chunks: list[dict]) -> str:
+def _format_kb(chunks: list[dict], kb_section_template: str) -> str:
     if not chunks:
         return ""
     formatted = "\n\n---\n\n".join(f"[{c['filename']}]\n{c['text']}" for c in chunks)
-    return KB_SECTION_TEMPLATE.format(chunks=formatted)
+    return kb_section_template.format(chunks=formatted)
 
 
 def _format_worker_results(results: list[WorkerResult]) -> str:

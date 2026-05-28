@@ -12,6 +12,7 @@ const router = createRouter({
       component: () => import('@/views/ChapterWorkspaceView.vue'),
     },
     { path: '/reports/:id/kb', name: 'kb', component: () => import('@/views/KnowledgeBaseView.vue') },
+    { path: '/settings', name: 'settings', component: () => import('@/views/SettingsView.vue') },
   ],
 })
 
