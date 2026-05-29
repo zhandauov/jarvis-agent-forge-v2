@@ -7,6 +7,7 @@ export const useGenerationStore = defineStore('generation', () => {
   const runStatus = ref<'idle' | 'pending' | 'running' | 'complete' | 'error'>('idle')
   const messages = ref<AgentMessage[]>([])
   const finalMarkdown = ref<string | null>(null)
+  const outputMode = ref<'markdown' | 'pptx'>('markdown')
   const streamingChunk = ref('')
   const agentStreaming = ref<Record<string, string>>({})
   const errorMessage = ref<string | null>(null)
@@ -40,7 +41,8 @@ export const useGenerationStore = defineStore('generation', () => {
         streamingChunk.value += event.data.delta as string
         break
       case 'final_output':
-        finalMarkdown.value = event.data.markdown as string
+        finalMarkdown.value = (event.data.content ?? event.data.markdown) as string
+        outputMode.value = (event.data.output_mode as 'markdown' | 'pptx') ?? 'markdown'
         runStatus.value = 'complete'
         streamingChunk.value = ''
         break
@@ -80,13 +82,14 @@ export const useGenerationStore = defineStore('generation', () => {
     runStatus.value = 'idle'
     messages.value = []
     finalMarkdown.value = null
+    outputMode.value = 'markdown'
     streamingChunk.value = ''
     agentStreaming.value = {}
     errorMessage.value = null
   }
 
   return {
-    activeRunId, runStatus, messages, finalMarkdown, streamingChunk, agentStreaming, errorMessage,
+    activeRunId, runStatus, messages, finalMarkdown, outputMode, streamingChunk, agentStreaming, errorMessage,
     handleWsEvent, startGeneration, stopGeneration, loadRun, reset,
   }
 })

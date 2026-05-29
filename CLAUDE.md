@@ -1,6 +1,7 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+# User notes
+If a user wants to add or do something in plan mode and suggests a way to achieve a solution, consider whether there are better ways to achieve this goal or solve the problem in other, more effective or better ways and suggest it.
 
 ## Project Overview
 
@@ -38,6 +39,10 @@ docker-compose up --build        # backend :8000, frontend :80
 ```
 
 ### No test suite exists in this project.
+
+## Shell Environment
+
+This project runs on Windows. Use the **Bash tool** for all shell commands (file listing, running servers, git, npm, pip). Do **not** use PowerShell-only commands like `Get-ChildItem`, `Set-Location`, `Select-String`, etc. — they fail in the Bash tool context. Stick to POSIX commands: `ls`, `cd`, `grep`, `find`, `cat`.
 
 ## Architecture
 

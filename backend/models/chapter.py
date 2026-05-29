@@ -21,4 +21,5 @@ class Chapter(Base):
 
     report: Mapped["Report"] = relationship("Report", back_populates="chapters")
     agent_config: Mapped["AgentTeamConfig | None"] = relationship("AgentTeamConfig", back_populates="chapter", cascade="all, delete-orphan", uselist=False)
+    slide_config: Mapped["SlideConfig | None"] = relationship("SlideConfig", back_populates="chapter", cascade="all, delete-orphan", uselist=False)
     generation_runs: Mapped[list["GenerationRun"]] = relationship("GenerationRun", back_populates="chapter", cascade="all, delete-orphan")

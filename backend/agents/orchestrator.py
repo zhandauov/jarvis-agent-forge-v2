@@ -24,6 +24,7 @@ from agents.prompts import (
     AGGREGATE_USER_TEMPLATE,
     KB_SECTION_TEMPLATE,
     PLAN_USER_TEMPLATE,
+    PPTX_AGGREGATE_USER_TEMPLATE,
     REVIEW_USER_TEMPLATE,
     SUPERVISOR_SYSTEM_DEFAULT,
     WORKER_SYSTEM_DEFAULT,
@@ -57,8 +58,12 @@ async def _run_generation_inner(run_id: int) -> None:
             return
 
         from sqlalchemy import select
+        from models.slide_config import SlideConfig
         result = await db.execute(select(AgentTeamConfig).where(AgentTeamConfig.chapter_id == chapter.id))
         config = result.scalar_one_or_none()
+        slide_result = await db.execute(select(SlideConfig).where(SlideConfig.chapter_id == chapter.id))
+        slide_config = slide_result.scalar_one_or_none()
+        output_mode = slide_config.output_mode if slide_config else "markdown"
 
         if not config:
             run.status = "error"
@@ -87,6 +92,17 @@ async def _run_generation_inner(run_id: int) -> None:
 
             agent_model = config.model or "claude-sonnet-4-6"
             internet_access = bool(config.internet_access)
+            if output_mode == "pptx":
+                aggregate_template = (
+                    config.pptx_aggregate_prompt
+                    or pt_map.get("pptx_aggregate_user", PPTX_AGGREGATE_USER_TEMPLATE)
+                )
+            else:
+                aggregate_template = (
+                    config.aggregate_prompt
+                    or pt_map.get("aggregate_user", AGGREGATE_USER_TEMPLATE)
+                )
+
             supervisor = SupervisorAgent(
                 supervisor_prompt,
                 client,
@@ -95,7 +111,7 @@ async def _run_generation_inner(run_id: int) -> None:
                 model=agent_model,
                 plan_template=pt_map.get("plan_user", PLAN_USER_TEMPLATE),
                 review_template=pt_map.get("review_user", REVIEW_USER_TEMPLATE),
-                aggregate_template=pt_map.get("aggregate_user", AGGREGATE_USER_TEMPLATE),
+                aggregate_template=aggregate_template,
                 kb_section_template=pt_map.get("kb_section", KB_SECTION_TEMPLATE),
             )
             workers = {
@@ -174,7 +190,7 @@ async def _run_generation_inner(run_id: int) -> None:
             chapter.final_output = final_markdown
             await db.commit()
 
-            await bus.publish(run_id, {"type": "final_output", "data": {"markdown": final_markdown}})
+            await bus.publish(run_id, {"type": "final_output", "data": {"content": final_markdown, "output_mode": output_mode, "markdown": final_markdown}})
 
         except asyncio.CancelledError:
             run.status = "cancelled"

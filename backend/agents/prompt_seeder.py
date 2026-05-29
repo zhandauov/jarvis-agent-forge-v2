@@ -2,6 +2,7 @@ from agents.prompts import (
     AGGREGATE_USER_TEMPLATE,
     KB_SECTION_TEMPLATE,
     PLAN_USER_TEMPLATE,
+    PPTX_AGGREGATE_USER_TEMPLATE,
     REVIEW_USER_TEMPLATE,
     SUPERVISOR_SYSTEM_DEFAULT,
     WORKER_SYSTEM_DEFAULT,
@@ -43,6 +44,12 @@ PROMPT_DEFAULTS = [
         "name": "Knowledge Base Section Template",
         "description": "Template used to format knowledge base chunks into agent context. Variables: {chunks}",
         "body": KB_SECTION_TEMPLATE,
+    },
+    {
+        "key": "pptx_aggregate_user",
+        "name": "Slide Aggregation Prompt (PPTX)",
+        "description": "Used instead of the normal aggregation prompt when output mode is PPTX. Instructs the supervisor to return JSON with title + bullets for a single slide. Variables: {chapter_title}, {chapter_description}, {all_findings}, {kb_section}",
+        "body": PPTX_AGGREGATE_USER_TEMPLATE,
     },
 ]
 

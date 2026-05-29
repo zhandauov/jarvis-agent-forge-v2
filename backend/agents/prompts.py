@@ -65,3 +65,29 @@ The tone should be analytical and authoritative."""
 
 KB_SECTION_TEMPLATE = """Relevant data from the knowledge base:
 {chunks}"""
+
+PPTX_AGGREGATE_USER_TEMPLATE = """You are creating a single presentation slide for the chapter: "{chapter_title}"
+
+Chapter description: {chapter_description}
+
+Research findings from your team:
+{all_findings}
+
+{kb_section}
+
+Your task: distill the most important insights into a single slide.
+Respond with ONLY a JSON object in exactly this format — no extra text, no code fences:
+{{
+  "title": "A concise, impactful slide title (max 10 words)",
+  "bullets": [
+    "First key point — specific and concise (max 15 words)",
+    "Second key point",
+    "Third key point"
+  ]
+}}
+
+Rules:
+- 4 to 7 bullet points maximum
+- Each bullet under 15 words
+- Focus on the most important facts, figures, and insights
+- No prose paragraphs"""
