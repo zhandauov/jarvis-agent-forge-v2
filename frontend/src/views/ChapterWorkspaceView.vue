@@ -39,10 +39,12 @@
         <AgentConfigPanel
           :chapter-id="chapterId"
           :initial-config="agentConfig"
+          :slide-config="slideConfig"
           :generating="genStore.runStatus === 'running' || genStore.runStatus === 'pending'"
           @generate="onGenerate"
           @stop="onStop"
           @saved="onConfigSaved"
+          @slide-config-saved="onSlideConfigSaved"
         />
       </div>
 
@@ -61,7 +63,15 @@
       <!-- Right: Output -->
       <div class="panel panel-output">
         <MarkdownPreview
+          v-if="outputMode === 'markdown'"
           :markdown="genStore.finalMarkdown"
+          :chapter-title="chapter.title"
+        />
+        <SlidePreview
+          v-else
+          :content="genStore.finalMarkdown"
+          :config="slideConfig ?? defaultSlideConfig"
+          :chapter-id="chapterId"
           :chapter-title="chapter.title"
         />
       </div>
@@ -84,11 +94,13 @@ import { useRoute } from 'vue-router'
 import { useChaptersStore } from '@/stores/chapters'
 import { useGenerationStore } from '@/stores/generation'
 import { agentConfigsApi, type AgentConfig } from '@/api/agentConfigs'
+import { slideConfigsApi, DEFAULT_SLIDE_CONFIG, type SlideConfig } from '@/api/slideConfigs'
 import { useWebSocket } from '@/composables/useWebSocket'
 import AgentConfigPanel from '@/components/agent/AgentConfigPanel.vue'
 import AgentConversation from '@/components/agent/AgentConversation.vue'
 import GenerationStatus from '@/components/agent/GenerationStatus.vue'
 import MarkdownPreview from '@/components/output/MarkdownPreview.vue'
+import SlidePreview from '@/components/output/SlidePreview.vue'
 
 const route = useRoute()
 const reportId = Number(route.params.reportId)
@@ -99,6 +111,16 @@ const genStore = useGenerationStore()
 
 const chapter = computed(() => chaptersStore.current)
 const agentConfig = ref<AgentConfig | null>(null)
+const slideConfig = ref<SlideConfig | null>(null)
+
+// Fallback config used only when slide config hasn't loaded yet
+const defaultSlideConfig = { ...DEFAULT_SLIDE_CONFIG, id: 0, chapter_id: chapterId, created_at: '', updated_at: '' } as SlideConfig
+
+const outputMode = computed(() => {
+  // During generation the store may have updated outputMode via websocket
+  if (genStore.runStatus === 'complete') return genStore.outputMode
+  return slideConfig.value?.output_mode ?? 'markdown'
+})
 
 const wsRunId = computed(() => genStore.activeRunId)
 useWebSocket(wsRunId)
@@ -112,15 +134,20 @@ onMounted(async () => {
   try {
     agentConfig.value = await agentConfigsApi.get(chapterId)
   } catch {}
+  try {
+    slideConfig.value = await slideConfigsApi.get(chapterId)
+  } catch {}
 
   if (chapter.value?.final_output) {
     genStore.finalMarkdown = chapter.value.final_output
+    genStore.outputMode = slideConfig.value?.output_mode ?? 'markdown'
     genStore.runStatus = 'complete'
   }
 })
 
 async function onGenerate() {
   genStore.reset()
+  genStore.outputMode = slideConfig.value?.output_mode ?? 'markdown'
   await genStore.startGeneration(chapterId)
 }
 
@@ -130,6 +157,10 @@ async function onStop() {
 
 function onConfigSaved() {
   agentConfigsApi.get(chapterId).then(c => { agentConfig.value = c }).catch(() => {})
+}
+
+function onSlideConfigSaved(config: SlideConfig) {
+  slideConfig.value = config
 }
 </script>
 

@@ -18,6 +18,8 @@ class AgentTeamConfig(Base):
     max_rounds: Mapped[int] = mapped_column(Integer, default=4)
     model: Mapped[str] = mapped_column(String(100), default="claude-sonnet-4-6")
     internet_access: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
+    aggregate_prompt: Mapped[str | None] = mapped_column(Text, nullable=True)
+    pptx_aggregate_prompt: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
 

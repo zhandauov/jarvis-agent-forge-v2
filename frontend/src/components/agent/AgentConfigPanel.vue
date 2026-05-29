@@ -65,7 +65,33 @@
           </div>
         </label>
       </div>
+
+      <div class="field">
+        <label>Aggregate Prompt <span class="label-hint">(override)</span></label>
+        <textarea
+          v-model="form.aggregate_prompt"
+          rows="3"
+          placeholder="Leave empty to use the global default from Settings → Aggregation Prompt"
+          class="textarea"
+        />
+      </div>
+
+      <div class="field">
+        <label>PPTX Slide Prompt <span class="label-hint">(override)</span></label>
+        <textarea
+          v-model="form.pptx_aggregate_prompt"
+          rows="3"
+          placeholder="Leave empty to use the global default from Settings → Slide Aggregation Prompt"
+          class="textarea"
+        />
+      </div>
     </div>
+
+    <SlideConfigSection
+      :chapter-id="chapterId"
+      :initial-config="slideConfig"
+      @saved="onSlideConfigSaved"
+    />
 
     <div class="panel-footer">
       <button class="btn-save" :disabled="saving" @click="save">
@@ -106,14 +132,17 @@
 import { reactive, ref } from 'vue'
 import { agentConfigsApi, type AgentConfigUpsert } from '@/api/agentConfigs'
 import { SUPERVISOR_DEFAULT, WORKER_DEFAULT } from '@/constants/prompts'
+import type { SlideConfig } from '@/api/slideConfigs'
+import SlideConfigSection from './SlideConfigSection.vue'
 
 const props = defineProps<{
   chapterId: number
-  initialConfig?: { supervisor_prompt: string; worker_prompt: string; worker_roles: string[]; max_rounds: number; model?: string; internet_access?: boolean } | null
+  initialConfig?: { supervisor_prompt: string; worker_prompt: string; worker_roles: string[]; max_rounds: number; model?: string; internet_access?: boolean; aggregate_prompt?: string | null; pptx_aggregate_prompt?: string | null } | null
+  slideConfig: SlideConfig | null
   generating: boolean
 }>()
 
-const emit = defineEmits<{ generate: []; saved: []; stop: [] }>()
+const emit = defineEmits<{ generate: []; saved: []; stop: []; 'slide-config-saved': [config: SlideConfig] }>()
 
 const form = reactive<AgentConfigUpsert>({
   supervisor_prompt: props.initialConfig?.supervisor_prompt ?? SUPERVISOR_DEFAULT,
@@ -123,7 +152,13 @@ const form = reactive<AgentConfigUpsert>({
   max_rounds: props.initialConfig?.max_rounds ?? 4,
   model: props.initialConfig?.model ?? 'claude-sonnet-4-6',
   internet_access: props.initialConfig?.internet_access ?? false,
+  aggregate_prompt: props.initialConfig?.aggregate_prompt ?? null,
+  pptx_aggregate_prompt: props.initialConfig?.pptx_aggregate_prompt ?? null,
 })
+
+function onSlideConfigSaved(config: SlideConfig) {
+  emit('slide-config-saved', config)
+}
 
 const saving = ref(false)
 const configSaved = ref(!!props.initialConfig)
@@ -451,9 +486,16 @@ label {
   font-weight: 500;
 }
 
-.toggle-hint { 
+.toggle-hint {
   color: var(--text-4);
   font-size: var(--text-xs);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.label-hint {
+  font-weight: 400;
+  color: var(--text-4);
   text-transform: none;
   letter-spacing: 0;
 }

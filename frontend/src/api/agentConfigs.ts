@@ -10,6 +10,8 @@ export interface AgentConfig {
   max_rounds: number
   model: string
   internet_access: boolean
+  aggregate_prompt: string | null
+  pptx_aggregate_prompt: string | null
   created_at: string
   updated_at: string
 }
@@ -22,6 +24,8 @@ export interface AgentConfigUpsert {
   max_rounds: number
   model: string
   internet_access: boolean
+  aggregate_prompt: string | null
+  pptx_aggregate_prompt: string | null
 }
 
 export const agentConfigsApi = {

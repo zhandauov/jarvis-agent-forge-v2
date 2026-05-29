@@ -12,6 +12,8 @@ class AgentConfigUpsert(BaseModel):
     max_rounds: int = 4
     model: str = "claude-sonnet-4-6"
     internet_access: bool = False
+    aggregate_prompt: str | None = None
+    pptx_aggregate_prompt: str | None = None
 
     @field_validator("worker_roles")
     @classmethod
@@ -31,6 +33,8 @@ class AgentConfigOut(BaseModel):
     max_rounds: int
     model: str
     internet_access: bool
+    aggregate_prompt: str | None
+    pptx_aggregate_prompt: str | None
     created_at: datetime
     updated_at: datetime
 
