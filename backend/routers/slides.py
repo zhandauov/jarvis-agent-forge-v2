@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
@@ -90,9 +91,11 @@ async def export_pptx(chapter_id: int, db: AsyncSession = Depends(get_db)):
         raise HTTPException(400, "Chapter is not in PPTX output mode")
 
     pptx_bytes = build_slide(chapter.final_output, config, chapter.title)
-    filename = chapter.title.replace(" ", "_").lower() + ".pptx"
+    filename = chapter.title.replace(" ", "_") + ".pptx"
+    encoded = quote(filename, safe="")
+    disposition = f"attachment; filename=\"slide.pptx\"; filename*=UTF-8''{encoded}"
     return Response(
         content=pptx_bytes,
         media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        headers={"Content-Disposition": disposition},
     )

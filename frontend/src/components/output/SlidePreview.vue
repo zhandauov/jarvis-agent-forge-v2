@@ -3,19 +3,14 @@
     <div class="slide-header">
       <span class="panel-title">Output — Slide Preview</span>
       <div class="header-actions" v-if="parsedContent">
-        <a
-          class="action-btn"
-          :href="downloadUrl"
-          download
-          title="Download PPTX"
-        >
+        <button class="action-btn" :disabled="downloading" @click="downloadPptx" title="Download PPTX">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
             <polyline points="7 10 12 15 17 10"/>
             <line x1="12" y1="15" x2="12" y2="3"/>
           </svg>
-          <span>Download PPTX</span>
-        </a>
+          <span>{{ downloading ? 'Downloading…' : 'Download PPTX' }}</span>
+        </button>
       </div>
     </div>
 
@@ -114,7 +109,27 @@ const parsedContent = computed<SlideContent | null>(() => {
   }
 })
 
-const downloadUrl = computed(() => slideConfigsApi.exportPptxUrl(props.chapterId))
+const downloading = ref(false)
+
+async function downloadPptx() {
+  downloading.value = true
+  try {
+    const token = localStorage.getItem('auth_token')
+    const res = await fetch(slideConfigsApi.exportPptxUrl(props.chapterId), {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+    if (!res.ok) throw new Error('Export failed')
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${props.chapterTitle.replace(/\s+/g, '_').toLowerCase()}.pptx`
+    a.click()
+    URL.revokeObjectURL(url)
+  } finally {
+    downloading.value = false
+  }
+}
 
 function hex(c: string) { return `#${c.replace('#', '')}` }
 
