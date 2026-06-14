@@ -26,9 +26,11 @@ from agents.prompts import (
     PLAN_USER_TEMPLATE,
     PPTX_AGGREGATE_USER_TEMPLATE,
     REVIEW_USER_TEMPLATE,
+    SINGLE_AGENT_SYSTEM_DEFAULT,
     SUPERVISOR_SYSTEM_DEFAULT,
     WORKER_SYSTEM_DEFAULT,
 )
+from agents.single_agent import SingleAgentLoop
 from agents.supervisor import SupervisorAgent
 from agents.worker import WorkerAgent
 from core.config import settings
@@ -79,109 +81,116 @@ async def _run_generation_inner(run_id: int) -> None:
         await bus.publish(run_id, {"type": "status_update", "data": {"status": "running"}})
 
         try:
-            worker_roles: list[str] = json.loads(config.worker_roles)
-            kb_chunks = KBStore.instance().search(chapter.report_id, f"{chapter.title} {chapter.description or ''}", top_k=10)
+            client = anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
 
             from models.prompt_template import PromptTemplate
             pt_result = await db.execute(select(PromptTemplate))
             pt_map = {pt.key: pt.body for pt in pt_result.scalars().all()}
 
-            client = anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
-            supervisor_prompt = config.supervisor_prompt or pt_map.get("supervisor_system", SUPERVISOR_SYSTEM_DEFAULT)
-            worker_base_prompt = config.worker_prompt or pt_map.get("worker_system", WORKER_SYSTEM_DEFAULT)
-
             agent_model = config.model or "claude-sonnet-4-6"
             internet_access = bool(config.internet_access)
-            if output_mode == "pptx":
-                aggregate_template = (
-                    config.pptx_aggregate_prompt
-                    or pt_map.get("pptx_aggregate_user", PPTX_AGGREGATE_USER_TEMPLATE)
+
+            if config.mode == "single":
+                final_markdown = await _run_single_agent(
+                    db, run_id, chapter, config, output_mode, bus, client, pt_map, agent_model, internet_access
                 )
             else:
-                aggregate_template = (
-                    config.aggregate_prompt
-                    or pt_map.get("aggregate_user", AGGREGATE_USER_TEMPLATE)
+                worker_roles: list[str] = json.loads(config.worker_roles)
+                kb_chunks = KBStore.instance().search(chapter.report_id, f"{chapter.title} {chapter.description or ''}", top_k=10)
+
+                supervisor_prompt = config.supervisor_prompt or pt_map.get("supervisor_system", SUPERVISOR_SYSTEM_DEFAULT)
+                worker_base_prompt = config.worker_prompt or pt_map.get("worker_system", WORKER_SYSTEM_DEFAULT)
+
+                if output_mode == "pptx":
+                    aggregate_template = (
+                        config.pptx_aggregate_prompt
+                        or pt_map.get("pptx_aggregate_user", PPTX_AGGREGATE_USER_TEMPLATE)
+                    )
+                else:
+                    aggregate_template = (
+                        config.aggregate_prompt
+                        or pt_map.get("aggregate_user", AGGREGATE_USER_TEMPLATE)
+                    )
+
+                supervisor = SupervisorAgent(
+                    supervisor_prompt,
+                    client,
+                    run_id,
+                    bus,
+                    model=agent_model,
+                    plan_template=pt_map.get("plan_user", PLAN_USER_TEMPLATE),
+                    review_template=pt_map.get("review_user", REVIEW_USER_TEMPLATE),
+                    aggregate_template=aggregate_template,
+                    kb_section_template=pt_map.get("kb_section", KB_SECTION_TEMPLATE),
                 )
+                workers = {
+                    role: WorkerAgent(role, worker_base_prompt, client, model=agent_model, internet_access=internet_access)
+                    for role in worker_roles
+                }
 
-            supervisor = SupervisorAgent(
-                supervisor_prompt,
-                client,
-                run_id,
-                bus,
-                model=agent_model,
-                plan_template=pt_map.get("plan_user", PLAN_USER_TEMPLATE),
-                review_template=pt_map.get("review_user", REVIEW_USER_TEMPLATE),
-                aggregate_template=aggregate_template,
-                kb_section_template=pt_map.get("kb_section", KB_SECTION_TEMPLATE),
-            )
-            workers = {
-                role: WorkerAgent(role, worker_base_prompt, client, model=agent_model, internet_access=internet_access)
-                for role in worker_roles
-            }
+                sequence = 0
 
-            sequence = 0
-
-            # Step 1: Supervisor creates plan
-            await bus.publish(run_id, {"type": "agent_message", "data": {"role": "supervisor", "content": "Creating research plan...", "message_type": "system", "sequence": sequence}})
-            plan = await supervisor.create_plan(chapter.title, chapter.description or "", worker_roles, kb_chunks)
-            sequence += 1
-
-            plan_content = f"**Research Plan**\n\n{plan.plan_summary}\n\n" + "\n".join(f"- **{t.worker_role}**: {t.task}" for t in plan.tasks)
-            msg = AgentMessage(run_id=run_id, sequence=sequence, role="supervisor", content=plan_content, message_type="plan")
-            db.add(msg)
-            await db.commit()
-            await bus.publish(run_id, {"type": "agent_message", "data": {"role": "supervisor", "content": plan_content, "message_type": "plan", "sequence": sequence}})
-
-            # Step 2: Workers execute initial tasks
-            task_map = {t.worker_role: t.task for t in plan.tasks}
-            all_results: list[WorkerResult] = []
-
-            async def run_worker(role: str, task: str) -> WorkerResult:
-                nonlocal sequence
-                worker = workers.get(role) or WorkerAgent(role, worker_base_prompt, client, model=agent_model, internet_access=internet_access)
+                # Step 1: Supervisor creates plan
+                await bus.publish(run_id, {"type": "agent_message", "data": {"role": "supervisor", "content": "Creating research plan...", "message_type": "system", "sequence": sequence}})
+                plan = await supervisor.create_plan(chapter.title, chapter.description or "", worker_roles, kb_chunks)
                 sequence += 1
-                await bus.publish(run_id, {"type": "agent_message", "data": {"role": role, "content": f"Working on: {task}", "message_type": "task", "sequence": sequence}})
-                result = await worker.execute_task(task, kb_chunks, bus=bus, run_id=run_id)
-                sequence += 1
-                result_content = f"**{role} Report**\n\n{result.findings}" + (("\n\n**Key data points:**\n" + "\n".join(f"- {p}" for p in result.data_points)) if result.data_points else "")
-                msg = AgentMessage(run_id=run_id, sequence=sequence, role=role, content=result_content, message_type="result")
+
+                plan_content = f"**Research Plan**\n\n{plan.plan_summary}\n\n" + "\n".join(f"- **{t.worker_role}**: {t.task}" for t in plan.tasks)
+                msg = AgentMessage(run_id=run_id, sequence=sequence, role="supervisor", content=plan_content, message_type="plan")
                 db.add(msg)
                 await db.commit()
-                await bus.publish(run_id, {"type": "agent_message", "data": {"role": role, "content": result_content, "message_type": "result", "sequence": sequence}})
-                return result
+                await bus.publish(run_id, {"type": "agent_message", "data": {"role": "supervisor", "content": plan_content, "message_type": "plan", "sequence": sequence}})
 
-            results = []
-            for role in worker_roles:
-                results.append(await run_worker(role, task_map.get(role, f"Research {chapter.title}")))
-            all_results.extend(results)
+                # Step 2: Workers execute initial tasks
+                task_map = {t.worker_role: t.task for t in plan.tasks}
+                all_results: list[WorkerResult] = []
 
-            _check_cancelled(run_id)
+                async def run_worker(role: str, task: str) -> WorkerResult:
+                    nonlocal sequence
+                    worker = workers.get(role) or WorkerAgent(role, worker_base_prompt, client, model=agent_model, internet_access=internet_access)
+                    sequence += 1
+                    await bus.publish(run_id, {"type": "agent_message", "data": {"role": role, "content": f"Working on: {task}", "message_type": "task", "sequence": sequence}})
+                    result = await worker.execute_task(task, kb_chunks, bus=bus, run_id=run_id)
+                    sequence += 1
+                    result_content = f"**{role} Report**\n\n{result.findings}" + (("\n\n**Key data points:**\n" + "\n".join(f"- {p}" for p in result.data_points)) if result.data_points else "")
+                    msg = AgentMessage(run_id=run_id, sequence=sequence, role=role, content=result_content, message_type="result")
+                    db.add(msg)
+                    await db.commit()
+                    await bus.publish(run_id, {"type": "agent_message", "data": {"role": role, "content": result_content, "message_type": "result", "sequence": sequence}})
+                    return result
 
-            # Step 3: Discussion rounds
-            for round_num in range(config.max_rounds):
-                decision = await supervisor.review_and_decide(chapter.title, all_results)
-                if decision.ready_to_aggregate or not decision.follow_up_tasks:
-                    break
+                results = []
+                for role in worker_roles:
+                    results.append(await run_worker(role, task_map.get(role, f"Research {chapter.title}")))
+                all_results.extend(results)
 
-                follow_up_content = "**Follow-up requests:**\n" + "\n".join(f"- **{t.worker_role}**: {t.task}" for t in decision.follow_up_tasks)
-                sequence += 1
-                msg = AgentMessage(run_id=run_id, sequence=sequence, role="supervisor", content=follow_up_content, message_type="discussion")
-                db.add(msg)
-                await db.commit()
-                await bus.publish(run_id, {"type": "agent_message", "data": {"role": "supervisor", "content": follow_up_content, "message_type": "discussion", "sequence": sequence}})
-
-                for t in decision.follow_up_tasks:
-                    all_results.append(await run_worker(t.worker_role, t.task))
                 _check_cancelled(run_id)
 
-            # Step 4: Aggregate final output
-            sequence += 1
-            await bus.publish(run_id, {"type": "agent_message", "data": {"role": "supervisor", "content": "Writing final report section...", "message_type": "system", "sequence": sequence}})
-            final_markdown = await supervisor.aggregate(chapter.title, chapter.description or "", all_results, kb_chunks)
+                # Step 3: Discussion rounds
+                for round_num in range(config.max_rounds):
+                    decision = await supervisor.review_and_decide(chapter.title, all_results)
+                    if decision.ready_to_aggregate or not decision.follow_up_tasks:
+                        break
 
-            sequence += 1
-            msg = AgentMessage(run_id=run_id, sequence=sequence, role="supervisor", content=final_markdown, message_type="final")
-            db.add(msg)
+                    follow_up_content = "**Follow-up requests:**\n" + "\n".join(f"- **{t.worker_role}**: {t.task}" for t in decision.follow_up_tasks)
+                    sequence += 1
+                    msg = AgentMessage(run_id=run_id, sequence=sequence, role="supervisor", content=follow_up_content, message_type="discussion")
+                    db.add(msg)
+                    await db.commit()
+                    await bus.publish(run_id, {"type": "agent_message", "data": {"role": "supervisor", "content": follow_up_content, "message_type": "discussion", "sequence": sequence}})
+
+                    for t in decision.follow_up_tasks:
+                        all_results.append(await run_worker(t.worker_role, t.task))
+                    _check_cancelled(run_id)
+
+                # Step 4: Aggregate final output
+                sequence += 1
+                await bus.publish(run_id, {"type": "agent_message", "data": {"role": "supervisor", "content": "Writing final report section...", "message_type": "system", "sequence": sequence}})
+                final_markdown = await supervisor.aggregate(chapter.title, chapter.description or "", all_results, kb_chunks)
+
+                sequence += 1
+                msg = AgentMessage(run_id=run_id, sequence=sequence, role="supervisor", content=final_markdown, message_type="final")
+                db.add(msg)
 
             run.status = "complete"
             run.final_output = final_markdown
@@ -206,3 +215,32 @@ async def _run_generation_inner(run_id: int) -> None:
             chapter.status = "error"
             await db.commit()
             await bus.publish(run_id, {"type": "error", "data": {"message": str(exc)}})
+
+
+async def _run_single_agent(
+    db, run_id, chapter, config, output_mode, bus, client, pt_map, agent_model, internet_access
+) -> str:
+    """Single autonomous agent (agentic loop) — follows the user's Markdown instructions,
+    using knowledge-base and web tools, and returns the final deliverable."""
+    from models.generation_run import AgentMessage
+
+    system_prompt = pt_map.get("single_agent_system", SINGLE_AGENT_SYSTEM_DEFAULT)
+    instructions = config.single_agent_instructions or ""
+
+    await bus.publish(run_id, {"type": "agent_message", "data": {"role": "agent", "content": "Агент приступил к работе по инструкции...", "message_type": "system"}})
+
+    loop = SingleAgentLoop(
+        system_prompt=system_prompt,
+        client=client,
+        run_id=run_id,
+        bus=bus,
+        report_id=chapter.report_id,
+        model=agent_model,
+        internet_access=internet_access,
+        output_mode=output_mode,
+    )
+    final_markdown = await loop.run(instructions, chapter.title, chapter.description or "")
+
+    msg = AgentMessage(run_id=run_id, sequence=0, role="agent", content=final_markdown, message_type="final")
+    db.add(msg)
+    return final_markdown

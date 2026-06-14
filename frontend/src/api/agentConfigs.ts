@@ -1,5 +1,7 @@
 import client from './client'
 
+export type AgentMode = 'team' | 'single'
+
 export interface AgentConfig {
   id: number
   chapter_id: number
@@ -12,6 +14,8 @@ export interface AgentConfig {
   internet_access: boolean
   aggregate_prompt: string | null
   pptx_aggregate_prompt: string | null
+  mode: AgentMode
+  single_agent_instructions: string | null
   created_at: string
   updated_at: string
 }
@@ -26,6 +30,8 @@ export interface AgentConfigUpsert {
   internet_access: boolean
   aggregate_prompt: string | null
   pptx_aggregate_prompt: string | null
+  mode: AgentMode
+  single_agent_instructions: string | null
 }
 
 export const agentConfigsApi = {
