@@ -14,13 +14,16 @@
       </div>
     </div>
 
-    <div class="slide-viewport" v-if="parsedContent">
-      <div class="slide-scale-wrapper" ref="scaleWrapper">
-        <div
-          class="slide"
-          :style="slideStyle"
-          ref="slideEl"
-        >
+    <div class="slide-viewport" ref="viewport" v-if="parsedContent">
+      <!--
+        slide-positioner has the *visual* (scaled) dimensions so flex centering works.
+        .slide inside is full size but shrunk via CSS transform from top-left.
+      -->
+      <div
+        class="slide-positioner"
+        :style="{ width: scaledW + 'px', height: scaledH + 'px' }"
+      >
+        <div class="slide" :style="slideStyle">
           <div class="slide-title" :style="titleStyle">{{ parsedContent.title }}</div>
           <ul class="slide-bullets" :style="bodyContainerStyle">
             <li
@@ -59,39 +62,40 @@ const props = defineProps<{
   chapterTitle: string
 }>()
 
-const scaleWrapper = ref<HTMLElement | null>(null)
-const slideEl = ref<HTMLElement | null>(null)
+// Natural slide dimensions in px (96 dpi)
+const SLIDE_W = computed(() => props.config.slide_ratio === '4:3' ? 960 : 1280)
+const SLIDE_H = 720
+
+const viewport = ref<HTMLElement | null>(null)
 const scale = ref(1)
 
-// Slide natural dimensions (px, at 96dpi equivalent)
-const SLIDE_W = computed(() => props.config.slide_ratio === '4:3' ? 960 : 1280)
-const SLIDE_H = computed(() => props.config.slide_ratio === '4:3' ? 720 : 720)
-
 function updateScale() {
-  if (!scaleWrapper.value) return
-  const availW = scaleWrapper.value.clientWidth - 32
-  const availH = scaleWrapper.value.clientHeight - 32
-  const scaleW = availW / SLIDE_W.value
-  const scaleH = availH / SLIDE_H.value
-  scale.value = Math.min(scaleW, scaleH, 1)
+  if (!viewport.value) return
+  const availW = viewport.value.clientWidth - 32   // 16px padding each side
+  const availH = viewport.value.clientHeight - 32
+  const sw = availW / SLIDE_W.value
+  const sh = availH / SLIDE_H
+  scale.value = Math.min(sw, sh)
 }
 
 const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateScale) : null
 
 onMounted(() => {
   updateScale()
-  if (ro && scaleWrapper.value) ro.observe(scaleWrapper.value)
+  if (ro && viewport.value) ro.observe(viewport.value)
 })
-
 onUnmounted(() => ro?.disconnect())
 
-// Parse JSON content from agent
+// Visual dimensions after scaling — used to size the positioner div
+const scaledW = computed(() => SLIDE_W.value * scale.value)
+const scaledH = computed(() => SLIDE_H * scale.value)
+
+// Parsed content
 interface SlideContent { title: string; bullets: string[] }
 
 const parsedContent = computed<SlideContent | null>(() => {
   if (!props.content) return null
   let raw = props.content.trim()
-  // Strip markdown code fences
   raw = raw.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim()
   try {
     const data = JSON.parse(raw)
@@ -99,7 +103,6 @@ const parsedContent = computed<SlideContent | null>(() => {
       return { title: data.title, bullets: data.bullets }
     }
   } catch {}
-  // Fallback: first line = title, rest = bullets
   const lines = raw.split('\n').map(l => l.trim()).filter(Boolean)
   const firstLine = lines[0]
   if (!firstLine) return null
@@ -109,6 +112,7 @@ const parsedContent = computed<SlideContent | null>(() => {
   }
 })
 
+// Download
 const downloading = ref(false)
 
 async function downloadPptx() {
@@ -123,7 +127,7 @@ async function downloadPptx() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `${props.chapterTitle.replace(/\s+/g, '_').toLowerCase()}.pptx`
+    a.download = `${props.chapterTitle.replace(/\s+/g, '_')}.pptx`
     a.click()
     URL.revokeObjectURL(url)
   } finally {
@@ -135,7 +139,7 @@ function hex(c: string) { return `#${c.replace('#', '')}` }
 
 const slideStyle = computed(() => ({
   width: `${SLIDE_W.value}px`,
-  height: `${SLIDE_H.value}px`,
+  height: `${SLIDE_H}px`,
   transform: `scale(${scale.value})`,
   transformOrigin: 'top left',
   backgroundColor: hex(props.config.bg_color),
@@ -144,6 +148,9 @@ const slideStyle = computed(() => ({
   display: 'flex',
   flexDirection: 'column' as const,
   gap: '16px',
+  borderRadius: '4px',
+  boxShadow: '0 4px 32px rgba(0,0,0,0.22)',
+  flexShrink: '0',
 }))
 
 const titleStyle = computed(() => ({
@@ -153,6 +160,7 @@ const titleStyle = computed(() => ({
   color: hex(props.config.title_color),
   lineHeight: '1.2',
   flexShrink: '0',
+  wordBreak: 'break-word' as const,
 }))
 
 const bodyContainerStyle = computed(() => ({
@@ -176,6 +184,7 @@ const bodyStyle = computed(() => ({
   display: 'flex',
   alignItems: 'flex-start',
   gap: '10px',
+  wordBreak: 'break-word' as const,
 }))
 </script>
 
@@ -221,55 +230,46 @@ const bodyStyle = computed(() => ({
   cursor: pointer;
   font-size: var(--text-xs);
   font-family: var(--font);
-  text-decoration: none;
   transition: all var(--duration-fast) var(--ease-out);
 }
 
-.action-btn:hover {
+.action-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.action-btn:not(:disabled):hover {
   border-color: var(--brand);
   color: var(--brand-text);
   background: var(--brand-soft);
 }
 
+/* ─── Viewport: full available space, centres the positioner ─── */
 .slide-viewport {
   flex: 1;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--sp-4);
+  padding: 16px;
   background: var(--bg-overlay);
 }
 
-.slide-scale-wrapper {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
+/*
+  Positioner is sized to the *visual* (scaled) slide dimensions.
+  This is what gets centred inside the viewport.
+  The actual .slide div inside is full-size but shrunk via transform.
+*/
+.slide-positioner {
+  position: relative;
+  flex-shrink: 0;
 }
 
+/* .slide styles are fully inline (slideStyle computed) */
 .slide {
-  border-radius: 4px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
-  flex-shrink: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
-.slide-title {
-  word-break: break-word;
-}
-
-.slide-bullets {
-  word-break: break-word;
-}
-
-.slide-bullet::before {
-  content: '•';
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
+/* ─── Empty state ─── */
 .empty-state {
   flex: 1;
   display: flex;
