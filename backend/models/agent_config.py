@@ -20,6 +20,8 @@ class AgentTeamConfig(Base):
     internet_access: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
     aggregate_prompt: Mapped[str | None] = mapped_column(Text, nullable=True)
     pptx_aggregate_prompt: Mapped[str | None] = mapped_column(Text, nullable=True)
+    mode: Mapped[str] = mapped_column(String(20), default="team", server_default="team")
+    single_agent_instructions: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
 

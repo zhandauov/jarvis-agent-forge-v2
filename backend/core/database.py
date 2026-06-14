@@ -20,6 +20,8 @@ async def create_tables() -> None:
             "ALTER TABLE agent_team_configs ADD COLUMN internet_access BOOLEAN NOT NULL DEFAULT 0",
             "ALTER TABLE agent_team_configs ADD COLUMN aggregate_prompt TEXT",
             "ALTER TABLE agent_team_configs ADD COLUMN pptx_aggregate_prompt TEXT",
+            "ALTER TABLE agent_team_configs ADD COLUMN mode VARCHAR(20) NOT NULL DEFAULT 'team'",
+            "ALTER TABLE agent_team_configs ADD COLUMN single_agent_instructions TEXT",
         ]:
             try:
                 await conn.execute(text(stmt))
